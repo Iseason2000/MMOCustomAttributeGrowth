@@ -1,0 +1,4 @@
+Health:
+    10: "5+{level}"
+    20: "10+{level}"
+Power:

@@ -1,0 +1,12 @@
+name: MMOExtension
+version: '${version}'
+main: top.iseason.bukkit.mmoextension.MMOExtension
+api-version: 1.15
+prefix: MMOExtension
+load: STARTUP
+depend: [MMOCore]
+authors: [Iseason]
+website: www.iseason.top
+commands:
+  mmoExtension:
+    aliases: [mme]
