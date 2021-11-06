@@ -1,25 +1,28 @@
 package top.iseason.bukkit.mmoextension;
 
+import io.lumine.mythic.lib.api.stat.StatInstance;
+import io.lumine.mythic.lib.api.stat.modifier.StatModifier;
 import net.Indyuce.mmocore.MMOCore;
+import net.Indyuce.mmocore.api.event.PlayerLevelUpEvent;
 import net.Indyuce.mmocore.api.player.PlayerData;
+import net.Indyuce.mmocore.api.player.stats.PlayerStats;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import java.io.File;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Objects;
 
-public final class MMOExtension extends JavaPlugin implements CommandExecutor {
-    private final ScriptEngine jse = new ScriptEngineManager().getEngineByName("JavaScript");
-    private YamlConfiguration config;
+public final class MMOExtension extends JavaPlugin implements Listener {
+    private FileConfiguration config;
+    private HashMap<String, LinkedHashMap<Integer, Double>> attributes;
 
     @Override
     public void onEnable() {
@@ -28,8 +31,13 @@ public final class MMOExtension extends JavaPlugin implements CommandExecutor {
             Bukkit.getServer().getLogger().warning(ChatColor.RED + "未检查到MMOCore!");
             return;
         }
-        Objects.requireNonNull(Bukkit.getPluginCommand("mmoExtension")).setExecutor(this);
-        config = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "config.yml"));
+        getServer().getPluginManager().registerEvents(this, this);
+        File file = new File(getDataFolder(), "config.yml");
+        if (!file.exists()) {
+            saveDefaultConfig();
+        }
+        reloadConfigs();
+
     }
 
     @Override
@@ -37,24 +45,38 @@ public final class MMOExtension extends JavaPlugin implements CommandExecutor {
         // Plugin shutdown logic
     }
 
-    // mme updateAttribute  player
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.isOp()) {
-            return true;
-        }
-        if (args.length != 2) {
-            return true;
-        }
-        if (!args[0].equals("updateAttribute")) {
-            return true;
-        }
-        Player player = Bukkit.getServer().getPlayer(args[1]);
-        if (player == null) {
-            return true;
-        }
+    @EventHandler
+    private void onPlayerLevelUpEvent(PlayerLevelUpEvent event) {
+        PlayerData playerData = PlayerData.get(event.getPlayer());
+        int newLevel = event.getNewLevel();
+        StatInstance max_health = playerData.getStats().getInstance("MAX_HEALTH");
+
+        max_health.addModifier("test", new StatModifier(10 + newLevel));
+        //总数
+        System.out.println(max_health.getTotal());
+    }
+
+    private void reloadConfigs() {
+        config = getConfig();
+        attributes = new HashMap<>();
+        config.getKeys(false).forEach(key -> {
+            LinkedHashMap<Integer, Double> pairs = new LinkedHashMap<>();
+            Objects.requireNonNull(config.getConfigurationSection(key))
+                    .getKeys(false)
+                    .stream()
+                    .sorted()
+                    .forEach(level -> {
+                        double value = config.getDouble(key + "." + level);
+                        pairs.put(Integer.valueOf(level), value);
+                    });
+            attributes.put(key, pairs);
+        });
+    }
+
+    //todo:根据等级调节
+    private void applyAttributeByLevel(Player player, int level) {
         PlayerData playerData = PlayerData.get(player);
-        System.out.println(playerData.getAttributes().toJsonString());
-        return true;
+        PlayerStats stats = playerData.getStats();
+
     }
 }

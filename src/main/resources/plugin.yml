@@ -7,6 +7,3 @@ load: STARTUP
 depend: [MMOCore]
 authors: [Iseason]
 website: www.iseason.top
-commands:
-  mmoExtension:
-    aliases: [mme]
