@@ -1,18 +1,17 @@
-package top.iseason.bukkit.mmoextension;
+package top.iseason.bukkit.mmocustomattributegrowth;
 
 import io.lumine.mythic.lib.api.stat.StatInstance;
 import io.lumine.mythic.lib.api.stat.modifier.StatModifier;
 import net.Indyuce.mmocore.MMOCore;
+import net.Indyuce.mmocore.api.event.AsyncPlayerDataLoadEvent;
 import net.Indyuce.mmocore.api.event.PlayerLevelUpEvent;
 import net.Indyuce.mmocore.api.player.PlayerData;
 import net.Indyuce.mmocore.api.player.stats.PlayerStats;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -22,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public final class MMOExtension extends JavaPlugin implements Listener {
+public final class MMOCustomAttributeGrowth extends JavaPlugin implements Listener {
     private FileConfiguration config;
     private HashMap<String, LinkedHashMap<Integer, Double>> attributes;
 
@@ -92,6 +91,7 @@ public final class MMOExtension extends JavaPlugin implements Listener {
         });
 
     }
+
     //根据等级获取倍率
     private double getValueByLevel(LinkedHashMap<Integer, Double> v, int level) {
         double value = 0.0;
@@ -107,9 +107,8 @@ public final class MMOExtension extends JavaPlugin implements Listener {
 
     //登录时更新数据
     @EventHandler
-    private void onPlayerJoinEvent(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        PlayerData playerData = PlayerData.get(player);
-        applyAttributeByLevel(playerData, playerData.getLevel());
+    private void onAsyncPlayerDataLoadEvent(AsyncPlayerDataLoadEvent event) {
+        PlayerData data = event.getData();
+        applyAttributeByLevel(data, data.getLevel());
     }
 }

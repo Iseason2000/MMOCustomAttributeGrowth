@@ -1,8 +1,8 @@
-name: MMOExtension
+name: MMOCustomAttributeGrowth
 version: '${version}'
-main: top.iseason.bukkit.mmoextension.MMOExtension
+main: top.iseason.bukkit.mmocustomattributegrowth.MMOCustomAttributeGrowth
 api-version: 1.15
-prefix: MMOExtension
+prefix: MMOCustomAttributeGrowth
 load: STARTUP
 depend: [MMOCore]
 authors: [Iseason]
