@@ -92,7 +92,7 @@ public final class MMOExtension extends JavaPlugin implements Listener {
         });
 
     }
-
+    //根据等级获取倍率
     private double getValueByLevel(LinkedHashMap<Integer, Double> v, int level) {
         double value = 0.0;
         for (Map.Entry<Integer, Double> next : v.entrySet()) {
