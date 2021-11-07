@@ -12,12 +12,14 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public final class MMOExtension extends JavaPlugin implements Listener {
@@ -37,25 +39,22 @@ public final class MMOExtension extends JavaPlugin implements Listener {
             saveDefaultConfig();
         }
         reloadConfigs();
-
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        attributes.clear();
     }
 
+    //升级时更新数据
     @EventHandler
     private void onPlayerLevelUpEvent(PlayerLevelUpEvent event) {
-        PlayerData playerData = PlayerData.get(event.getPlayer());
         int newLevel = event.getNewLevel();
-        StatInstance max_health = playerData.getStats().getInstance("MAX_HEALTH");
-
-        max_health.addModifier("test", new StatModifier(10 + newLevel));
-        //总数
-        System.out.println(max_health.getTotal());
+        applyAttributeByLevel(PlayerData.get(event.getPlayer()), newLevel);
     }
 
+    //读取配置
     private void reloadConfigs() {
         config = getConfig();
         attributes = new HashMap<>();
@@ -67,16 +66,50 @@ public final class MMOExtension extends JavaPlugin implements Listener {
                     .sorted()
                     .forEach(level -> {
                         double value = config.getDouble(key + "." + level);
+                        if (value == 0.0) return;
                         pairs.put(Integer.valueOf(level), value);
                     });
             attributes.put(key, pairs);
         });
     }
 
-    //todo:根据等级调节
-    private void applyAttributeByLevel(Player player, int level) {
-        PlayerData playerData = PlayerData.get(player);
+    //根据等级计算数据
+    private void applyAttributeByLevel(PlayerData playerData, int level) {
+        if (level == 1) return;
         PlayerStats stats = playerData.getStats();
+        attributes.forEach((k, v) -> {
+            StatInstance instance = stats.getInstance(k);
+            StatModifier modifier2 = instance.getModifier("mmocoreClass");
+            double baseValue = instance.getBase();
+            if (modifier2 != null) {
+                baseValue += modifier2.getValue();
+            }
+            double powValue = 1;
+            for (int i = 2; i <= level; i++) {
+                powValue *= getValueByLevel(v, i);
+            }
+            instance.addModifier("MMOExtension", new StatModifier(baseValue * (powValue - 1)));
+        });
 
+    }
+
+    private double getValueByLevel(LinkedHashMap<Integer, Double> v, int level) {
+        double value = 0.0;
+        for (Map.Entry<Integer, Double> next : v.entrySet()) {
+            if (level > next.getKey()) {
+                value = next.getValue();
+            } else {
+                break;
+            }
+        }
+        return value;
+    }
+
+    //登录时更新数据
+    @EventHandler
+    private void onPlayerJoinEvent(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        PlayerData playerData = PlayerData.get(player);
+        applyAttributeByLevel(playerData, playerData.getLevel());
     }
 }
